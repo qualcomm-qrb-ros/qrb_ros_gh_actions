@@ -1,9 +1,6 @@
 <div align="center">
-  <h1>${Package Name}</h1>
-  <p align="center">
-    ${Primary Picture} <!-- Add images or videos to showcase your project demo, use case, or logo -->
-  </p>
-  <p>${One sentence to describe your package}</p>
+  <h1>qrb_ros_gh_actions</h1>
+  <p>Centralized CI/CD automation and shared GitHub Actions for QRB ROS projects.</p>
   
   <a href="https://ubuntu.com/download/qualcomm-iot" target="_blank"><img src="https://img.shields.io/badge/Qualcomm%20Ubuntu-E95420?style=for-the-badge&logo=ubuntu&logoColor=white" alt="Qualcomm Ubuntu"></a>
   <a href="https://docs.ros.org/en/jazzy/" target="_blank"><img src="https://img.shields.io/badge/ROS%20Jazzy-1c428a?style=for-the-badge&logo=ros&logoColor=white" alt="Jazzy"></a>
@@ -13,103 +10,162 @@
 ---
 
 ## 👋 Overview
+A centralized repository for storing and maintaining shared GitHub Actions, CI workflows, and automation scripts for the [qualcomm-qrb-ros](https://github.com/qualcomm-qrb-ros/) organization.
+These resources are intended to standardize and streamline CI/CD processes across all qrb-ros projects.
 
-> 📌 **Introduction to the project**
-> - Highlight key features
-> - Important information
 
-> 📌 **Architecture diagrams**
-> - The high-level architecture with layers, components and relationship
-
-> 📌 **Describe the architecture diagram:**
-> - Functions of each module
-> - Relationships between modules
-> - Any other information to help users easily understand the diagram
-> - ❗ Module names should not use internal or private terms; please use community-friendly terminology
-
-## 🔎 Table of Contents (Optional)
+## 🔎 Table of Contents
 
 > 📌 If the content is extensive, we recommend adding a table of contents.
 
-  * [APIs](#-apis)
-  * [Supported Targets](#-supported-targets)
-  * [Installation](#-installation)
-  * [Usage](#-usage)
-  * [Build from Source](#-build-from-source)
-  * [Contributing](#-contributing)
-  * [Contributors](#%EF%B8%8F-contributors-optional)
-  * [FAQs](#-faqs-optional)
-  * [License](#-license)
+- [👋 Overview](#-overview)
+- [🔎 Table of Contents](#-table-of-contents)
+- [🎯 Supported Linters](#-supported-linters)
+- [🚩 Get Started](#-get-started)
+  - [Action-lint](#action-lint)
+    - [Usage](#usage)
+  - [Commit-lint](#commit-lint)
+    - [Usage](#usage-1)
+  - [Cpp Code Style Checker](#cpp-code-style-checker)
+    - [Usage](#usage-2)
+  - [QIRP Build Checker](#qirp-build-checker)
+    - [Usage](#usage-3)
+  - [Ubuntu Build](#ubuntu-build)
+    - [Usage](#usage-4)
+- [🤝 Contributing](#-contributing)
+- [📜 License](#-license)
 
-## ⚓ APIs
+## 🎯 Supported Linters
+| Linters              | Description                                            |
+| -------------------- | ------------------------------------------------------ |
+| `action-lint`        | Lints C++ code using a specified style guide |
+| `commit-lint`        | Lints Python code using a specified style guide |
+| `cpp-code-style-checker` | Lints C++ code style using cpplint |
+| `qirp-sdk-build-checker` | Checks the build results of the QIRP SDK |
+| `ubuntu-build`       | Checks the build results of the ROS build on Ubuntu | |
 
-> 📌 Include the APIs for all your packages, such as ROS APIs or C++/Python library APIs.
 
-### 🔹 ${ROS Package} APIs
+## 🚩 Get Started
+### Action-lint
+This is a reusable GitHub Actions workflow that automatically lints the syntax and structure of your GitHub Actions workflows using actionlint. It helps identify errors, deprecated syntax, and potential issues early in the development cycle, ensuring robust and maintainable CI/CD pipelines. This workflow can be called by other repositories to apply workflow linting checks.
 
-#### ROS Interfaces
+#### Usage
+To use the `action-lint` workflow, create a `.github/workflows/action-lint.yml` file in your repository:
 
-> 📌 List the ROS interfaces:
-> - Which topics are subscribed/published? What are the message types?
-> - Service and action information
+```yaml
+# .github/workflows/action-lint.yml
+name: Action Linter Workflows
 
-#### ROS Parameters
+on:
+  push:
+  pull_request: # Also run on PRs
 
-> 📌 List ROS parameters:
-> - Parameter name, type, description, and default value
+jobs:
+  call_action_linter:
+    uses: qualcomm-qrb-ros/qrb_ros_gh_actions/.github/workflows/action-lint.yml@main # Adjust the path and ref as needed
+    # If your central repository is private, you might need to pass a token:
+    # with:
+    #   token: ${{ secrets.GITHUB_TOKEN }} # Or a PAT with repo scope for private repos
+```
 
-### 🔹 ${Non-ROS Package} APIs
 
-> 📌 List non-ROS package APIs, such as C++ libraries:
-> - Only public functions, including parameters and descriptions
+### Commit-lint
+This is a reusable GitHub Actions workflow that automatically validates Git commit messages using Commitlint. It helps maintain a clean and standardized commit history across your repositories by ensuring all commits adhere to a predefined convention (e.g., Conventional Commits). This workflow can be called by other repositories to apply commit linting checks on Pull Requests.
 
-## 🎯 Supported Targets
+#### Usage
+To use the `commit-lint` workflow, create a `.github/workflows/commit-lint.yml` file in your repository:
 
-> 📌 List the supported hardware/targets for this project:
-> - If your package depends on specific hardware, list them
-> - ❗ Hardware and target information should be public and accessible
+```yaml
+# .github/workflows/commit-lint.yml
+name: Commit Message Lint
 
----
+on: [pull_request] # Trigger this workflow on Pull Request events
 
-## ✨ Installation
+jobs:
+  call_commit_lint:
+    uses: qualcomm-qrb-ros/qrb_ros_gh_actions/.github/workflows/commit-lint.yml@main
+    # If your central repository is private, you might need to pass a token:
+    # with:
+    #   token: ${{ secrets.GITHUB_TOKEN }} # Or a PAT with repo scope for private repos
+```
 
-> 📌 Instructions for installation in Ubuntu:
-> - We do not provide steps for QCLinux, but please add a link for developers if needed
-> - Include steps for adding Debian PPA or other environment settings if required
+### Cpp Code Style Checker
+This is a reusable GitHub Actions workflow that automatically checks Cpp code style using cpplint. It helps maintain a consistent code style across your project by enforcing a set of formatting rules. This workflow can be called by other repositories to apply Cpp code style checks on Pull Requests.
 
-## 🚀 Usage
+#### Usage
+To use the `cpp-code-style-checker` workflow, create a `.github/workflows/cpp-code-style-checker.yml` file in your repository:
 
-> 📌 How to use this package:
-> - What happens when commands are run?
-> - How to check if the result is as expected?
-> - How to configure advanced features
+```yaml
+# .github/workflows/cpp-style-checker.yml
+name: C++ Code Style Check
 
----
+on:
+  push:
+  pull_request: # Run on PRs
 
-## 👨‍💻 Build from Source
+jobs:
+  call_cpp_style_checker:
+    uses: qualcomm-qrb-ros/qrb_ros_gh_actions/.github/workflows/cpp-code-style-checker.yml@main # Adjust the path and ref as needed
+    # If your central repository is private, you might need to pass a token:
+    # with:
+    #   token: ${{ secrets.GITHUB_TOKEN }} # Or a PAT with repo scope for private repos
+```
 
-> 📌 How to build this package locally:
-> - Assume developers are using Ubuntu with ROS installed
-> - Step-by-step guide to install dependencies, download source code, build the project, and verify your build
+### QIRP Build Checker
+This is a reusable GitHub Actions workflow that automatically checks QIRP (Qualcomm Integrated Robotics Product) SDK compliance for your repository. It helps ensure that your repository adheres to QIRP guidelines and best practices. This workflow can be called by other repositories to apply QIRP checks on Pull Requests.
+
+#### Usage
+```yaml
+name: QIRP Build Test
+
+on:
+  push:
+  pull_request: # Run on PRs
+
+jobs:
+  qirp-sdk-build-checker:
+    uses: qualcomm-qrb-ros/qrb_ros_gh_actions/.github/workflows/qirp-sdk-build-checker.yml@main
+    # with:
+    #   # Download source code of your dependency
+    #   dependencies: qualcomm-qrb-ros/qrb_ros_interfaces
+    #   # Specific parameters to colcon build
+    #   colcon_args:  --cmake-clean-first
+    #   # Customized shell commands before "colcon build"
+    #   pre_build_commands: "echo "hello""
+```
+
+### Ubuntu Build
+This workflow is intended to be used by other repositories to run ROS Ubuntu build checks for your repository. It is designed to be used as a reusable workflow, allowing other repositories to easily incorporate Ubuntu build checks into their workflow.
+
+#### Usage
+To use the `ubuntu-build` workflow, add the following code to your repository's `.github/workflows/your-workflow.yml` file:
+
+```yaml
+name: Standard ROS Build Checker
+
+on:
+    push:
+    pull_request:
+
+jobs:
+  ros-build:
+    uses: qualcomm-qrb-ros/qrb_ros_gh_actions/.github/workflows/ubuntu-build.yml@main
+    # with:
+    #   # QRB ROS dependency
+    #   dependencies: "qualcomm-qrb-ros/qrb_ros_transport qualcomm-qrb-ros/lib_mem_dmabuf"
+    #   # Specific parameters to colcon build
+    #   colcon_args:  --cmake-clean-first
+    #   # ROS2 distribution to use, e.g. jazzy
+    #   ros-distro: "jazzy"
+    #   # List of apt packages to install before colcon build
+    #   apt-packages: "libboost-all-dev"
+```
 
 ## 🤝 Contributing
 
 We love community contributions! Get started by reading our [CONTRIBUTING.md](CONTRIBUTING.md).  
 Feel free to create an issue for bug reports, feature requests, or any discussion 💡.
 
-## ❤️ Contributors (Optional)
-
-> 📌 List the contributors to this project
-
-## ❔ FAQs (Optional)
-
-> 📌 Include common and popular questions and answers
-
-<details>
-<summary>${Question}</summary><br>
-${The answer and reasoning}
-</details>
-
 ## 📜 License
 
-> 📌 Add license declaration and a link to the license file
+Project is licensed under the [BSD-3-Clause](https://spdx.org/licenses/BSD-3-Clause.html) License. See [LICENSE](./LICENSE) for the full license text.

@@ -33,17 +33,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Describe any security vulnerabilities fixed or security improvements.
 - For example: Patched critical security vulnerability related to user authentication.
 
-## [1.0.0] - 2023-10-26
-
+## [0.1.0] - 2025-9-1
 ### Added
-- Initial public release of the project.
-- Core functionality for [Project Name].
+- Add reusable linters for QRB ROS organization. Linter list:  
 
-## [0.1.0] - 2023-09-15
-
-### Added
-- First experimental release.
-- Basic data processing and visualization features.
-
-### Fixed
-- Resolved issue with data import from CSV files.
+| Linters              | Description                                            |
+| -------------------- | ------------------------------------------------------ |
+| `action-lint`        | Lints C++ code using a specified style guide |
+| `commit-lint`        | Lints Python code using a specified style guide |
+| `cpp-code-style-checker` | Lints C++ code style using cpplint |
+| `qirp-sdk-build-checker` | Checks the build results of the QIRP SDK |
+| `ubuntu-build`       | Checks the build results of the ROS build on Ubuntu | |
+- Add description and usage to each linter actions.
