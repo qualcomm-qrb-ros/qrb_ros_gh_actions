@@ -1,6 +1,7 @@
 name: Cpp Code Style Checker
 
-on: [push, pull_request, workflow_dispatch]
+on:
+  workflow_call:
 
 jobs:
   cpp-code-style-check:
