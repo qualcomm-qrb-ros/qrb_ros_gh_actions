@@ -1,7 +1,41 @@
-name: Commit Lint Checker for Pull Requets
+name: Commit lint
 
-on: [push, pull_request]
+on:
+  workflow_call:
+  pull_request:
 
 jobs:
   commitlint:
-    uses: qualcomm-qrb-ros/.github/.github/workflows/commitlint.yml@commitlint
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install required dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y git curl nodejs
+
+      - name: Install commitlint
+        run: |
+          npm install @commitlint/config-conventional @commitlint/config-angular @commitlint/cli
+
+      - name: Print versions
+        run: |
+          git --version
+          node --version
+          npm --version
+          npx commitlint --version
+
+      - name: Set configuration file
+        run: |
+          wget https://raw.githubusercontent.com/qualcomm-qrb-ros/qrb_ros_gh_actions/refs/heads/main/configs/commitlint/commitlint.config.js
+
+      - name: Validate current commit (last commit) with commitlint
+        if: github.event_name == 'push'
+        run: npx commitlint --last --verbose
+
+      - name: Validate PR commits with commitlint
+        if: github.event_name == 'pull_request'
+        run: npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose
