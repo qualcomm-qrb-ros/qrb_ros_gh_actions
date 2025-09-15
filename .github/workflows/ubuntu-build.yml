@@ -41,15 +41,18 @@ jobs:
 
           sudo apt update -y && sudo apt upgrade -y
           sudo apt install -y ${{ inputs.apt-packages }} wget
+
       - name: Checkout source code
         uses: actions/checkout@v4
         with:
           path: ${{ env.ROS_SRC }}/${{ github.event.repository.name }}
+
       - name: Checkout dependency
         run: |
           for repo in ${{ inputs.dependencies }}; do
             git clone https://github.com/${repo}.git ${ROS_SRC}/${repo#*/} || true
           done
+
       - name: Check ROS dependency
         run: |
           wget https://raw.githubusercontent.com/qualcomm-qrb-ros/qrb_ros_distro/refs/heads/main/qrb-ros-dep/qcom-distribution.yaml -O ${ROS_WS}/qcom-distribution.yaml
@@ -58,9 +61,50 @@ jobs:
           fi 
           sudo rosdep update
           sudo rosdep install -y --rosdistro ${{ inputs.ros-distro }} --from-paths ${ROS_SRC} --ignore-src
+
       - name: Build ROS packages
         shell: bash
         run: |
           cd ${ROS_WS}
           source /opt/ros/jazzy/setup.sh
           colcon build ${{ inputs.colcon_args }}
+
+      - name: Generate Debian packages
+        continue-on-error: true
+        shell: bash
+        run: |
+          cd ${ROS_WS}
+          mkdir ${ROS_WS}/debian_dir
+          export OUTPUT_DIR=${ROS_WS}/debian_dir
+          source /opt/ros/jazzy/setup.sh
+
+          for pkg in $(colcon list -t | cut -f2)
+          do
+            cd ${pkg}
+
+            bloom-generate rosdebian --ros-distro "${{ inputs.ros-distro }}" -i "$(date +%s)"
+
+            # Build package using fakeroot
+            fakeroot debian/rules binary -j8
+
+            # Move build result to the output directory
+            mv ../*.deb $OUTPUT_DIR
+            mv ../*.ddeb $OUTPUT_DIR
+            ls -al $OUTPUT_DIR
+          done
+
+      - name: Stage build artifacts for publishing
+        continue-on-error: true
+        run: |
+          build_dir=./uploads
+          mkdir -p $build_dir
+
+          tar -cvf "${build_dir}/${{ github.event.repository.name }}-ubuntu-artifacts.tar" --transform "s|^${ROS_WS}/||" -C "${ROS_WS}" install build log
+          tar -cvf "${build_dir}/${{ github.event.repository.name }}-ubuntu-debs.tar" --transform "s|^${ROS_WS}/||" -C "${ROS_WS}" debian_dir
+
+      - name: Upload private artifacts
+        continue-on-error: true
+        uses: qualcomm-linux/upload-private-artifact-action@v1
+        with:
+          path: ./uploads
+          fileserver_url: "https://quic-qrt-ros-fileserver-1029608027416.us-central1.run.app"
