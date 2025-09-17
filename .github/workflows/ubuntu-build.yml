@@ -40,7 +40,7 @@ jobs:
           sudo add-apt-repository -y ppa:ubuntu-qcom-iot/qirp
 
           sudo apt update -y && sudo apt upgrade -y
-          sudo apt install -y ${{ inputs.apt-packages }} wget
+          sudo apt install -y ${{ inputs.apt-packages }} wget python3-bloom python3-rosdep fakeroot debhelper dh-python
 
       - name: Checkout source code
         uses: actions/checkout@v4
