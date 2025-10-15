@@ -85,7 +85,7 @@ jobs:
           set -x
           export TARGET_DIR="${PERSIST_DIR}/${MACHINE}-${DISTRO}-${QCOM_SELECTED_BSP}"
           if [ -e ${PERSIST_DIR} ] && [ -r ${PERSIST_DIR} ] && [ -x ${PERSIST_DIR} ];then
-            image_dir=$(find ${TARGET_DIR} -type d -name 'qcom-[0-9]*.[0-9]*.[0-9]*-QLI.[0-9]*.[0-9]*-Ver.[0-9]*.[0-9]*_robotics-product-sdk-[0-9]*.[0-9]' | sort -V | tail -n 1)
+            image_dir=$(find ${TARGET_DIR} -type d -name 'qcom-[0-9]*.[0-9]*.[0-9]*-QLI.[0-9]*.[0-9]*-Ver.[0-9]*.[0-9]*_robotics*-sdk-[0-9]*.[0-9]' | sort -V | tail -n 1)
             sdk_file=$(find ${image_dir} -type f -name "*.sh")
             echo "SDK path: ${image_dir}"
             echo "SDK file: ${sdk_file}"
