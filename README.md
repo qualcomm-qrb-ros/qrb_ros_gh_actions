@@ -157,8 +157,8 @@ jobs:
     #   colcon_args:  --cmake-clean-first
     #   # ROS2 distribution to use, e.g. jazzy
     #   ros-distro: "jazzy"
-    #   # List of apt packages to install before colcon build
-    #   apt-packages: "libboost-all-dev"
+    #   # Shell commands to run during environment setup (use "echo VAR=value >> $GITHUB_ENV" to set persistent variables)
+    #   env_setup_commands: "sudo apt install libboost-all-dev"
 ```
 
 ## 🤝 Contributing
