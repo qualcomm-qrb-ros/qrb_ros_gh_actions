@@ -165,6 +165,13 @@ jobs:
 
           tar -cvf ${build_dir}/${{ github.event.repository.name }}-${MACHINE}-${DISTRO}-${QCOM_SELECTED_BSP}-artifacts.tar --transform "s|^${WORKSPACE}/||" -C ${WORKSPACE} install build log
 
+      - name: Upload artifacts to S3 bucket
+        uses: qualcomm-linux/upload-private-artifact-action@aws-v2
+        with:
+          path: ./uploads
+          destination: ${{ github.repository_owner }}/${{ github.event.repository.name }}/${{ github.run_id }}-${{ github.run_attempt }}/
+          s3_bucket: qli-prd-ros-gh-artifacts
+
       - name: Upload private artifacts
         continue-on-error: true
         uses: qualcomm-linux/upload-private-artifact-action@v1
