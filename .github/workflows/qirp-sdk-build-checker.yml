@@ -158,23 +158,16 @@ jobs:
             -DBUILD_TESTING=OFF
 
       - name: Stage build artifacts for publishing
-        continue-on-error: true
         run: |
           build_dir=./uploads
           mkdir -p $build_dir
 
-          tar -cvf ${build_dir}/${{ github.event.repository.name }}-${MACHINE}-${DISTRO}-${QCOM_SELECTED_BSP}-artifacts.tar --transform "s|^${WORKSPACE}/||" -C ${WORKSPACE} install build log
+          tar -cvf ${build_dir}/${{ github.event.repository.name }}-${MACHINE}-${DISTRO}-${QCOM_SELECTED_BSP}-artifacts.tar --transform "s|^${WORKSPACE}/||" -C ${WORKSPACE} install
 
       - name: Upload artifacts to S3 bucket
+        continue-on-error: true
         uses: qualcomm-linux/upload-private-artifact-action@aws-v2
         with:
           path: ./uploads
           destination: ${{ github.repository_owner }}/${{ github.event.repository.name }}/${{ github.run_id }}-${{ github.run_attempt }}/
           s3_bucket: qli-prd-ros-gh-artifacts
-
-      - name: Upload private artifacts
-        continue-on-error: true
-        uses: qualcomm-linux/upload-private-artifact-action@v1
-        with:
-          path: ./uploads
-          fileserver_url: "https://quic-qrt-ros-fileserver-1029608027416.us-central1.run.app"
