@@ -107,7 +107,7 @@ jobs:
 
       - name: Upload artifacts to S3 bucket
         continue-on-error: true
-        uses: qualcomm-linux/upload-private-artifact-action@aws-v2
+        uses: qualcomm-linux/upload-private-artifact-action@aws-v4
         with:
           path: ./uploads
           destination: ${{ github.repository_owner }}/${{ github.event.repository.name }}/${{ github.run_id }}-${{ github.run_attempt }}/
