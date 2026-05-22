@@ -106,10 +106,12 @@ jobs:
           tar -cvf "${build_dir}/${{ github.event.repository.name }}-ubuntu-debs.tar" --transform "s|^${ROS_WS}/||" -C "${ROS_WS}" debian_dir
 
       - name: Upload artifacts to S3 bucket
+        id: upload-artifacts
         continue-on-error: true
-        uses: qualcomm-linux/upload-private-artifact-action@aws-v4
+        uses: ./.github/actions/upload-artifact
         with:
           path: ./uploads
           destination: ${{ github.repository_owner }}/${{ github.event.repository.name }}/${{ github.run_id }}-${{ github.run_attempt }}/
           s3_bucket: qli-prd-ros-gh-artifacts
+          retention: 15d
 

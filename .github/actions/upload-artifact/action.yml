@@ -1,0 +1,71 @@
+name: "Upload Artifact to S3"
+description: "Uploads build artifacts to S3 bucket with retention tag."
+
+inputs:
+  path:
+    description: Directory or file to upload
+    required: true
+  destination:
+    description: S3 key prefix for the destination
+    required: true
+  s3_bucket:
+    description: S3 bucket name
+    required: true
+  retention:
+    description: S3 retention tag value (7d, 15d, 30d, 45d, 365d)
+    required: false
+    default: "45d"
+  fileserver_url:
+    description: URL used by clients to download content from the file server
+    required: false
+    default: "https://qli-prod-artifacts.qualcomm.com"
+  write-summary:
+    description: Append uploaded file list to GITHUB_STEP_SUMMARY
+    required: false
+    default: "true"
+
+outputs:
+  url:
+    description: "Base download URL directory for uploaded artifacts"
+    value: ${{ steps.upload.outputs.url }}
+  files:
+    description: "Newline-separated list of successfully uploaded file paths"
+    value: ${{ steps.upload.outputs.files }}
+
+runs:
+  using: composite
+  steps:
+    - name: Install AWS CLI
+      shell: sh
+      run: |
+        if command -v aws >/dev/null 2>&1; then
+          echo "AWS CLI already installed: $(aws --version)"
+        else
+          ARCH=$(uname -m)
+          if [ "$ARCH" = "x86_64" ]; then
+            curl -s "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o /tmp/awscliv2.zip
+          elif [ "$ARCH" = "aarch64" ]; then
+            curl -s "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o /tmp/awscliv2.zip
+          else
+            echo "Unsupported architecture: $ARCH" && exit 1
+          fi
+          unzip -q /tmp/awscliv2.zip -d /tmp/awscli-setup
+          if command -v sudo >/dev/null 2>&1; then
+            sudo /tmp/awscli-setup/aws/install --update
+          else
+            /tmp/awscli-setup/aws/install --update
+          fi
+          rm -rf /tmp/awscliv2.zip /tmp/awscli-setup
+        fi
+
+    - name: Upload artifacts
+      id: upload
+      shell: bash
+      env:
+        INPUT_PATH: ${{ inputs.path }}
+        INPUT_DESTINATION: ${{ inputs.destination }}
+        INPUT_S3_BUCKET: ${{ inputs.s3_bucket }}
+        INPUT_RETENTION: ${{ inputs.retention }}
+        INPUT_FILESERVER_URL: ${{ inputs.fileserver_url }}
+        INPUT_WRITE_SUMMARY: ${{ inputs.write-summary }}
+      run: $GITHUB_ACTION_PATH/upload.sh
