@@ -1,0 +1,135 @@
+name: Test upload-artifact action
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/actions/upload-artifact/**
+  push:
+    paths:
+      - .github/actions/upload-artifact/**
+
+jobs:
+  test-upload:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: [self-hosted, qcom-u2404, amd64, amd64-8x]
+            name: self-hosted-amd64
+          - runner: [self-hosted, qcom-u2404, arm64, arm64-8x]
+            name: self-hosted-arm64
+          # - runner: ubuntu-24.04-arm
+          #   name: github-hosted-arm64
+          # - runner: ubuntu-24.04
+          #   name: github-hosted-amd64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create test artifacts
+        run: |
+          mkdir -p ./uploads
+          echo "test-artifact-$(date +%s)" > ./uploads/test.txt
+
+      - name: Upload artifacts
+        id: upload
+        uses: ./.github/actions/upload-artifact
+        with:
+          path: ./uploads
+          destination: ${{ github.repository_owner }}/${{ github.event.repository.name }}/${{ github.run_id }}-${{ github.run_attempt }}/${{ matrix.name }}/
+          s3_bucket: qli-prd-ros-gh-artifacts
+          retention: 15d
+
+      - name: Verify retention tag
+        env:
+          S3_BUCKET: qli-prd-ros-gh-artifacts
+          S3_KEY: ${{ github.repository_owner }}/${{ github.event.repository.name }}/${{ github.run_id }}-${{ github.run_attempt }}/${{ matrix.name }}/test.txt
+        run: |
+          tag=$(aws s3api get-object-tagging \
+            --bucket "$S3_BUCKET" \
+            --key "$S3_KEY" \
+            --query "TagSet[?Key==\`retention\`].Value" \
+            --output text)
+          echo "retention tag: $tag"
+          [ "$tag" = "15d" ] || { echo "ERROR: expected retention=15d, got '$tag'"; exit 1; }
+
+      - name: Verify outputs
+        run: |
+          url="${{ steps.upload.outputs.url }}"
+          files="${{ steps.upload.outputs.files }}"
+          [ -n "$url" ] || { echo "ERROR: url output is empty"; exit 1; }
+          [ -n "$files" ] || { echo "ERROR: files output is empty"; exit 1; }
+          echo "$files" | grep -q "test.txt" || { echo "ERROR: test.txt not in files output"; exit 1; }
+          echo "url: $url"
+          echo "files: $files"
+
+  test-upload-ros-jazzy:
+    runs-on: [self-hosted, qcom-u2404, amd64, amd64-8x]
+    container:
+      image: ros:jazzy
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install prerequisites
+        run: apt-get update && apt-get install -y curl unzip
+
+      - name: Create test artifacts
+        run: |
+          mkdir -p ./uploads
+          echo "test-artifact-docker-$(date +%s)" > ./uploads/test.txt
+
+      - name: Upload artifacts
+        id: upload
+        uses: ./.github/actions/upload-artifact
+        with:
+          path: ./uploads
+          destination: ${{ github.repository_owner }}/${{ github.event.repository.name }}/${{ github.run_id }}-${{ github.run_attempt }}/ros-jazzy/
+          s3_bucket: qli-prd-ros-gh-artifacts
+          retention: 15d
+
+      - name: Verify retention tag
+        env:
+          S3_BUCKET: qli-prd-ros-gh-artifacts
+          S3_KEY: ${{ github.repository_owner }}/${{ github.event.repository.name }}/${{ github.run_id }}-${{ github.run_attempt }}/ros-jazzy/test.txt
+        run: |
+          tag=$(aws s3api get-object-tagging \
+            --bucket "$S3_BUCKET" \
+            --key "$S3_KEY" \
+            --query "TagSet[?Key==\`retention\`].Value" \
+            --output text)
+          echo "retention tag: $tag"
+          [ "$tag" = "15d" ] || { echo "ERROR: expected retention=15d, got '$tag'"; exit 1; }
+
+      - name: Verify outputs
+        run: |
+          url="${{ steps.upload.outputs.url }}"
+          files="${{ steps.upload.outputs.files }}"
+          [ -n "$url" ] || { echo "ERROR: url output is empty"; exit 1; }
+          [ -n "$files" ] || { echo "ERROR: files output is empty"; exit 1; }
+          echo "$files" | grep -q "test.txt" || { echo "ERROR: test.txt not in files output"; exit 1; }
+          echo "url: $url"
+          echo "files: $files"
+
+  test-write-summary-false:
+    runs-on: [self-hosted, qcom-u2404, amd64, amd64-8x]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create test artifacts
+        run: |
+          mkdir -p ./uploads
+          echo "test-artifact-$(date +%s)" > ./uploads/test.txt
+
+      - name: Upload artifacts with write-summary disabled
+        id: upload
+        uses: ./.github/actions/upload-artifact
+        with:
+          path: ./uploads
+          destination: ${{ github.repository_owner }}/${{ github.event.repository.name }}/${{ github.run_id }}-${{ github.run_attempt }}/no-summary/
+          s3_bucket: qli-prd-ros-gh-artifacts
+          retention: 15d
+          write-summary: "false"
