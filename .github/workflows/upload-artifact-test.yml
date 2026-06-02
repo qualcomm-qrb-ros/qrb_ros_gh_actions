@@ -26,7 +26,7 @@ jobs:
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6.0.2
 
       - name: Create test artifacts
         run: |
@@ -71,7 +71,7 @@ jobs:
       image: ros:jazzy
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6.0.2
 
       - name: Install prerequisites
         run: apt-get update && apt-get install -y curl unzip
@@ -117,7 +117,7 @@ jobs:
     runs-on: [self-hosted, qcom-u2404, amd64, amd64-8x]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6.0.2
 
       - name: Create test artifacts
         run: |
