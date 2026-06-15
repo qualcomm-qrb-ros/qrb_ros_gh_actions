@@ -5,6 +5,10 @@ on:
   workflow_dispatch:
   workflow_call:
 
+permissions:
+  contents: read
+  security-events: write
+
 jobs:
   preflight:
     name: Run QC Preflight Checks
