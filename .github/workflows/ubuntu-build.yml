@@ -2,6 +2,13 @@ name: Build QRB ROS packages on Ubuntu
 
 on:
   workflow_call:
+    secrets:
+      AWS_ACCESS_KEY_ID:
+        description: 'AWS access key ID for S3 artifact upload'
+        required: false
+      AWS_SECRET_ACCESS_KEY:
+        description: 'AWS secret access key for S3 artifact upload'
+        required: false
     inputs:
       dependencies:
         description: 'List of repositories to checkout, e.g. "owner/repo1 owner/repo2"'
@@ -17,7 +24,7 @@ on:
         required: false
         default: jazzy
       runner:
-        description: 'GitHub Actions runner label, defaults to ubuntu-24.04-arm for jazzy, ubuntu-26.04-arm for lyrical'
+        description: 'Runner label(s): single string for GitHub-hosted (e.g. "ubuntu-26.04-arm") or JSON array for self-hosted (e.g. "[\"self-hosted\",\"arm64\"]"); auto-detected from ros-distro when empty'
         type: string
         required: false
         default: ''
@@ -32,8 +39,14 @@ env:
 
 jobs:
   ros-build:
-    runs-on: ${{ inputs.runner != '' && inputs.runner || (inputs.ros-distro == 'lyrical' && 'ubuntu-26.04-arm' || 'ubuntu-24.04-arm') }}
+    runs-on: >-
+      ${{
+        inputs.runner != '' && fromJSON(inputs.runner) ||
+        (inputs.ros-distro == 'lyrical' && 'ubuntu-26.04-arm' || 'ubuntu-24.04-arm')
+      }}
     container: ros:${{ inputs.ros-distro }}
+    env:
+      HAS_AWS_CREDENTIALS: ${{ secrets.AWS_ACCESS_KEY_ID != '' }}
     steps:
       - name: Update and install extra packages
         run: |
@@ -114,6 +127,11 @@ jobs:
       - name: Upload artifacts to S3 bucket
         id: upload-artifacts
         continue-on-error: true
+        if: env.HAS_AWS_CREDENTIALS == 'true'
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-west-2
         uses: qualcomm-qrb-ros/qrb_ros_gh_actions/.github/actions/upload-artifact@main
         with:
           path: ./uploads
