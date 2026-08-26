@@ -74,9 +74,12 @@ jobs:
           - qcom-robotics-ros2-jazzy
     steps:
       - name: Set enviroment variables
+        env:
+          MATRIX_MACHINE: ${{ matrix.machine }}
+          MATRIX_DISTRO: ${{ matrix.distro }}
         run: |
-          echo "MACHINE=${{ matrix.machine }}" >> $GITHUB_ENV
-          echo "DISTRO=${{ matrix.distro }}" >> $GITHUB_ENV
+          echo "MACHINE=$MATRIX_MACHINE" >> $GITHUB_ENV
+          echo "DISTRO=$MATRIX_DISTRO" >> $GITHUB_ENV
           sudo wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/local/bin/yq
           sudo chmod +x /usr/local/bin/yq
 
@@ -108,14 +111,21 @@ jobs:
           path: ${{ github.workspace }}/ros_ws/${{ github.event.repository.name }}
 
       - name: Checkout dependency
+        env:
+          DEPENDENCIES: ${{ inputs.dependencies }}
         run: |
           cd ${WORKSPACE}
           # Download your QRB ROS dependencies
-          for repo in ${{ inputs.dependencies }}; do
+          for repo in $DEPENDENCIES; do
             git clone https://github.com/${repo}.git ${WORKSPACE}/${repo#*/} || true
           done
 
       - name: build
+        env:
+          GH_WORKSPACE: ${{ github.workspace }}
+          REPO_NAME: ${{ github.event.repository.name }}
+          PRE_BUILD_COMMANDS: ${{ inputs.pre_build_commands }}
+          COLCON_ARGS: ${{ inputs.colcon_args }}
         run: |
           cd ${SDK_DIR}
           umask 022
@@ -131,7 +141,7 @@ jobs:
           ignore_list=()
 
           while read -r package _ _; do
-            cd ${{ github.workspace }}/ros_ws/${{ github.event.repository.name }}/.github/
+            cd ${GH_WORKSPACE}/ros_ws/${REPO_NAME}/.github/
 
             if [ -f ./config.yaml ]; then
               machine_supported=$(yq '.packages[] | select(.name == "'"${package}"'") | .machines[] | select(.name == "'"${MACHINE}"'")' ./config.yaml)
@@ -147,10 +157,10 @@ jobs:
 
           cd ${WORKSPACE}
 
-          if [ -n "${{ inputs.pre_build_commands }}" ];then
-            eval ${{ inputs.pre_build_commands }}
+          if [ -n "$PRE_BUILD_COMMANDS" ];then
+            eval "$PRE_BUILD_COMMANDS"
           fi
-          colcon build ${{ inputs.colcon_args }} --packages-ignore "${ignore_list[@]}" --merge-install --cmake-args \
+          colcon build $COLCON_ARGS --packages-ignore "${ignore_list[@]}" --merge-install --cmake-args \
             -DPython3_ROOT_DIR=${OECORE_TARGET_SYSROOT}/usr \
             -DPython3_NumPy_INCLUDE_DIR=${OECORE_TARGET_SYSROOT}/usr/lib/python3.12/site-packages/numpy/core/include \
             -DPYTHON_SOABI=cpython-312-aarch64-linux-gnu -DCMAKE_STAGING_PREFIX="$(pwd)/install" \
@@ -158,11 +168,13 @@ jobs:
             -DBUILD_TESTING=OFF
 
       - name: Stage build artifacts for publishing
+        env:
+          REPO_NAME: ${{ github.event.repository.name }}
         run: |
           build_dir=./uploads
           mkdir -p $build_dir
 
-          tar -cvf ${build_dir}/${{ github.event.repository.name }}-${MACHINE}-${DISTRO}-${QCOM_SELECTED_BSP}-artifacts.tar --transform "s|^${WORKSPACE}/||" -C ${WORKSPACE} install
+          tar -cvf ${build_dir}/${REPO_NAME}-${MACHINE}-${DISTRO}-${QCOM_SELECTED_BSP}-artifacts.tar --transform "s|^${WORKSPACE}/||" -C ${WORKSPACE} install
 
       - name: Upload artifacts to S3 bucket
         id: upload-artifacts
