@@ -8,10 +8,14 @@ set -e
 # INPUT_FILESERVER_URL, INPUT_WRITE_SUMMARY
 
 check_credentials() {
-  if ! aws sts get-caller-identity >/dev/null 2>&1; then
-    echo "AWS credentials are missing or invalid."
-    exit 1
+  if [ -n "$AWS_ACCESS_KEY_ID" ] && [ -n "$AWS_SECRET_ACCESS_KEY" ]; then
+    return 0
   fi
+  if aws sts get-caller-identity >/dev/null 2>&1; then
+    return 0
+  fi
+  echo "AWS credentials are missing or invalid."
+  exit 1
 }
 
 # Upload a single file. Writes "ok:<rel>" or "fail:<rel>" to $1 (results file).
