@@ -53,6 +53,7 @@ runs:
             unzip -q /tmp/awscliv2.zip -d /tmp/awscli-setup
           elif command -v python3 >/dev/null 2>&1; then
             python3 -c "import zipfile; zipfile.ZipFile('/tmp/awscliv2.zip').extractall('/tmp/awscli-setup')"
+            chmod -R +x /tmp/awscli-setup/aws
           else
             echo "Neither unzip nor python3 available" && exit 1
           fi
