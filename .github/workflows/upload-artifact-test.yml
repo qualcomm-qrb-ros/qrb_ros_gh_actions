@@ -19,11 +19,13 @@ jobs:
             name: self-hosted-amd64
           - runner: [self-hosted, qcom-u2404, arm64, arm64-8x]
             name: self-hosted-arm64
-          # - runner: ubuntu-24.04-arm
-          #   name: github-hosted-arm64
-          # - runner: ubuntu-24.04
-          #   name: github-hosted-amd64
+          - runner: ubuntu-24.04-arm
+            name: github-hosted-arm64
+          - runner: ubuntu-24.04
+            name: github-hosted-amd64
     runs-on: ${{ matrix.runner }}
+    env:
+      HAS_AWS_CREDENTIALS: ${{ secrets.AWS_ACCESS_KEY_ID != '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6.0.2
@@ -32,6 +34,18 @@ jobs:
         run: |
           mkdir -p ./uploads
           echo "test-artifact-$(date +%s)" > ./uploads/test.txt
+
+      - name: Configure AWS credentials
+        if: env.HAS_AWS_CREDENTIALS == 'true'
+        env:
+          _AWS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          _AWS_SECRET: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          {
+            echo "AWS_ACCESS_KEY_ID=$_AWS_KEY_ID"
+            echo "AWS_SECRET_ACCESS_KEY=$_AWS_SECRET"
+            echo "AWS_DEFAULT_REGION=us-west-2"
+          } >> "$GITHUB_ENV"
 
       - name: Upload artifacts
         id: upload
@@ -66,35 +80,58 @@ jobs:
           echo "url: $UPLOAD_URL"
           echo "files: $UPLOAD_FILES"
 
-  test-upload-ros-jazzy:
-    runs-on: [self-hosted, qcom-u2404, amd64, amd64-8x]
-    container:
-      image: ros:jazzy
+  test-upload-ros-container:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: [self-hosted, qcom-u2404, amd64, amd64-8x]
+            ros-distro: jazzy
+            name: self-hosted-jazzy
+          - runner: ubuntu-24.04-arm
+            ros-distro: jazzy
+            name: github-hosted-jazzy
+          - runner: ubuntu-26.04-arm
+            ros-distro: lyrical
+            name: github-hosted-lyrical
+    runs-on: ${{ matrix.runner }}
+    container: ros:${{ matrix.ros-distro }}
+    env:
+      HAS_AWS_CREDENTIALS: ${{ secrets.AWS_ACCESS_KEY_ID != '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6.0.2
-
-      - name: Install prerequisites
-        run: apt-get update && apt-get install -y curl unzip
 
       - name: Create test artifacts
         run: |
           mkdir -p ./uploads
           echo "test-artifact-docker-$(date +%s)" > ./uploads/test.txt
 
+      - name: Configure AWS credentials
+        if: env.HAS_AWS_CREDENTIALS == 'true'
+        env:
+          _AWS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          _AWS_SECRET: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          {
+            echo "AWS_ACCESS_KEY_ID=$_AWS_KEY_ID"
+            echo "AWS_SECRET_ACCESS_KEY=$_AWS_SECRET"
+            echo "AWS_DEFAULT_REGION=us-west-2"
+          } >> "$GITHUB_ENV"
+
       - name: Upload artifacts
         id: upload
         uses: ./.github/actions/upload-artifact
         with:
           path: ./uploads
-          destination: ${{ github.repository_owner }}/${{ github.event.repository.name }}/${{ github.run_id }}-${{ github.run_attempt }}/ros-jazzy/
+          destination: ${{ github.repository_owner }}/${{ github.event.repository.name }}/${{ github.run_id }}-${{ github.run_attempt }}/${{ matrix.name }}/
           s3_bucket: qli-prd-ros-gh-artifacts
           retention: 15d
 
       - name: Verify retention tag
         env:
           S3_BUCKET: qli-prd-ros-gh-artifacts
-          S3_KEY: ${{ github.repository_owner }}/${{ github.event.repository.name }}/${{ github.run_id }}-${{ github.run_attempt }}/ros-jazzy/test.txt
+          S3_KEY: ${{ github.repository_owner }}/${{ github.event.repository.name }}/${{ github.run_id }}-${{ github.run_attempt }}/${{ matrix.name }}/test.txt
         run: |
           tag=$(aws s3api get-object-tagging \
             --bucket "$S3_BUCKET" \
@@ -114,24 +151,3 @@ jobs:
           echo "$UPLOAD_FILES" | grep -q "test.txt" || { echo "ERROR: test.txt not in files output"; exit 1; }
           echo "url: $UPLOAD_URL"
           echo "files: $UPLOAD_FILES"
-
-  test-write-summary-false:
-    runs-on: [self-hosted, qcom-u2404, amd64, amd64-8x]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6.0.2
-
-      - name: Create test artifacts
-        run: |
-          mkdir -p ./uploads
-          echo "test-artifact-$(date +%s)" > ./uploads/test.txt
-
-      - name: Upload artifacts with write-summary disabled
-        id: upload
-        uses: ./.github/actions/upload-artifact
-        with:
-          path: ./uploads
-          destination: ${{ github.repository_owner }}/${{ github.event.repository.name }}/${{ github.run_id }}-${{ github.run_attempt }}/no-summary/
-          s3_bucket: qli-prd-ros-gh-artifacts
-          retention: 15d
-          write-summary: "false"
