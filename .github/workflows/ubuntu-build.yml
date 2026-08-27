@@ -140,14 +140,22 @@ jobs:
           tar -cvf "${build_dir}/${REPO_NAME}-ubuntu-artifacts.tar" --transform "s|^${ROS_WS}/||" -C "${ROS_WS}" install
           tar -cvf "${build_dir}/${REPO_NAME}-ubuntu-debs.tar" --transform "s|^${ROS_WS}/||" -C "${ROS_WS}" debian_dir
 
+      - name: Configure AWS credentials
+        if: env.HAS_AWS_CREDENTIALS == 'true'
+        env:
+          _AWS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          _AWS_SECRET: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          {
+            echo "AWS_ACCESS_KEY_ID=$_AWS_KEY_ID"
+            echo "AWS_SECRET_ACCESS_KEY=$_AWS_SECRET"
+            echo "AWS_DEFAULT_REGION=us-west-2"
+          } >> "$GITHUB_ENV"
+
       - name: Upload artifacts to S3 bucket
         id: upload-artifacts
         continue-on-error: true
         if: env.HAS_AWS_CREDENTIALS == 'true'
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: us-west-2
         uses: qualcomm-qrb-ros/qrb_ros_gh_actions/.github/actions/upload-artifact@main
         with:
           path: ./uploads
