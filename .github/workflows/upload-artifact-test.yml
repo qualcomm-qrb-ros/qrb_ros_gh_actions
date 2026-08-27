@@ -91,9 +91,10 @@ jobs:
           - runner: ubuntu-24.04-arm
             ros-distro: jazzy
             name: github-hosted-jazzy
-          - runner: ubuntu-26.04-arm
-            ros-distro: lyrical
-            name: github-hosted-lyrical
+          # ubuntu-26.04-arm not yet GA; uncomment when available
+          # - runner: ubuntu-26.04-arm
+          #   ros-distro: lyrical
+          #   name: github-hosted-lyrical
     runs-on: ${{ matrix.runner }}
     container: ros:${{ matrix.ros-distro }}
     env:
