@@ -26,8 +26,6 @@ jobs:
           - runner: ubuntu-24.04
             name: github-hosted-amd64
     runs-on: ${{ matrix.runner }}
-    env:
-      HAS_AWS_CREDENTIALS: ${{ secrets.AWS_ACCESS_KEY_ID != '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6.0.2
@@ -38,11 +36,11 @@ jobs:
           echo "test-artifact-$(date +%s)" > ./uploads/test.txt
 
       - name: Configure AWS credentials
-        if: env.HAS_AWS_CREDENTIALS == 'true'
         env:
           _AWS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           _AWS_SECRET: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         run: |
+          [ -n "$_AWS_KEY_ID" ] || exit 0
           {
             echo "AWS_ACCESS_KEY_ID=$_AWS_KEY_ID"
             echo "AWS_SECRET_ACCESS_KEY=$_AWS_SECRET"
@@ -51,6 +49,7 @@ jobs:
 
       - name: Upload artifacts
         id: upload
+        continue-on-error: true
         uses: ./.github/actions/upload-artifact
         with:
           path: ./uploads
@@ -59,6 +58,7 @@ jobs:
           retention: 15d
 
       - name: Verify retention tag
+        if: steps.upload.outcome == 'success'
         env:
           S3_BUCKET: qli-prd-ros-gh-artifacts
           S3_KEY: ${{ github.repository_owner }}/${{ github.event.repository.name }}/${{ github.run_id }}-${{ github.run_attempt }}/${{ matrix.name }}/test.txt
@@ -72,6 +72,7 @@ jobs:
           [ "$tag" = "15d" ] || { echo "ERROR: expected retention=15d, got '$tag'"; exit 1; }
 
       - name: Verify outputs
+        if: steps.upload.outcome == 'success'
         env:
           UPLOAD_URL: ${{ steps.upload.outputs.url }}
           UPLOAD_FILES: ${{ steps.upload.outputs.files }}
@@ -98,8 +99,6 @@ jobs:
             name: github-hosted-lyrical
     runs-on: ${{ matrix.runner }}
     container: ros:${{ matrix.ros-distro }}
-    env:
-      HAS_AWS_CREDENTIALS: ${{ secrets.AWS_ACCESS_KEY_ID != '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6.0.2
@@ -110,11 +109,11 @@ jobs:
           echo "test-artifact-docker-$(date +%s)" > ./uploads/test.txt
 
       - name: Configure AWS credentials
-        if: env.HAS_AWS_CREDENTIALS == 'true'
         env:
           _AWS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           _AWS_SECRET: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         run: |
+          [ -n "$_AWS_KEY_ID" ] || exit 0
           {
             echo "AWS_ACCESS_KEY_ID=$_AWS_KEY_ID"
             echo "AWS_SECRET_ACCESS_KEY=$_AWS_SECRET"
@@ -123,6 +122,7 @@ jobs:
 
       - name: Upload artifacts
         id: upload
+        continue-on-error: true
         uses: ./.github/actions/upload-artifact
         with:
           path: ./uploads
@@ -131,6 +131,7 @@ jobs:
           retention: 15d
 
       - name: Verify retention tag
+        if: steps.upload.outcome == 'success'
         env:
           S3_BUCKET: qli-prd-ros-gh-artifacts
           S3_KEY: ${{ github.repository_owner }}/${{ github.event.repository.name }}/${{ github.run_id }}-${{ github.run_attempt }}/${{ matrix.name }}/test.txt
@@ -144,6 +145,7 @@ jobs:
           [ "$tag" = "15d" ] || { echo "ERROR: expected retention=15d, got '$tag'"; exit 1; }
 
       - name: Verify outputs
+        if: steps.upload.outcome == 'success'
         env:
           UPLOAD_URL: ${{ steps.upload.outputs.url }}
           UPLOAD_FILES: ${{ steps.upload.outputs.files }}
