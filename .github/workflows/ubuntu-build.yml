@@ -3,7 +3,7 @@ name: Build QRB ROS packages on Ubuntu
 on:
   workflow_call:
     secrets:
-      AWS_ACCESS_KEY_ID:
+      AWS_ACCESS_KEY:
         description: 'AWS access key ID for S3 artifact upload'
         required: false
       AWS_SECRET_ACCESS_KEY:
@@ -140,7 +140,7 @@ jobs:
 
       - name: Configure AWS credentials
         env:
-          _AWS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          _AWS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
           _AWS_SECRET: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         run: |
           [ -n "$_AWS_KEY_ID" ] || exit 0

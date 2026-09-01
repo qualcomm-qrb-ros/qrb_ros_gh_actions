@@ -171,7 +171,7 @@ jobs:
     #   env_setup_commands: "sudo apt install libboost-all-dev"
     # secrets:
     #   # AWS credentials for S3 artifact upload (optional)
-    #   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+    #   AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY }}
     #   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 ```
 
