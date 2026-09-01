@@ -40,7 +40,8 @@ jobs:
           _AWS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
           _AWS_SECRET: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         run: |
-          [ -n "$_AWS_KEY_ID" ] || exit 0
+          echo "DEBUG: AWS_ACCESS_KEY length=${#_AWS_KEY_ID}, AWS_SECRET_ACCESS_KEY length=${#_AWS_SECRET}"
+          [ -n "$_AWS_KEY_ID" ] || { echo "ERROR: AWS_ACCESS_KEY secret is not configured."; exit 1; }
           {
             echo "AWS_ACCESS_KEY_ID=$_AWS_KEY_ID"
             echo "AWS_SECRET_ACCESS_KEY=$_AWS_SECRET"
@@ -110,7 +111,8 @@ jobs:
           _AWS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
           _AWS_SECRET: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         run: |
-          [ -n "$_AWS_KEY_ID" ] || exit 0
+          echo "DEBUG: AWS_ACCESS_KEY length=${#_AWS_KEY_ID}, AWS_SECRET_ACCESS_KEY length=${#_AWS_SECRET}"
+          [ -n "$_AWS_KEY_ID" ] || { echo "ERROR: AWS_ACCESS_KEY secret is not configured."; exit 1; }
           {
             echo "AWS_ACCESS_KEY_ID=$_AWS_KEY_ID"
             echo "AWS_SECRET_ACCESS_KEY=$_AWS_SECRET"
